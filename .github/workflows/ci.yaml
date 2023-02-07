@@ -16,14 +16,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_analyze_publish:
+  build_analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: csharp
+        queries: security-extended,security-and-quality
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release /p:Version=${VERSION} --no-restore
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:csharp"
+
+
+  build_test:
     name: Build, Test & Release
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
       security-events: write
-      packages: write
 
     steps:
     - uses: actions/checkout@v3
@@ -36,26 +69,30 @@ jobs:
       if: github.ref_type != 'tag'
       run: echo "VERSION=0.0.1-ci.0" >> $GITHUB_ENV
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: csharp
-        queries: security-extended,security-and-quality
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
+
     - name: Restore dependencies
       run: dotnet restore
+
     - name: Build
       run: dotnet build --configuration Release /p:Version=${VERSION} --no-restore
+
+    # - name: Test
+    #   run: dotnet test --no-build --verbosity normal
+
     - name: Create package
       run: dotnet pack --configuration Release /p:Version=${VERSION}
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v3
       with:
-        category: "/language:${{matrix.language}}"
+        name: Package
+        path: |
+          **/bin/**/*.nupkg
+          **/bin/**/*.snupkg
 
     - name: Create Release
       if: github.ref_type == 'tag'
