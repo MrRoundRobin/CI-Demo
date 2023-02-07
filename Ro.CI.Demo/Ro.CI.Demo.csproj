@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Authors>Robin Müller</Authors>
+    <Company>Ro.</Company>
+    <RootNamespace>$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Demo NuGet Package to test GitHub CI</Title>
+    <RepositoryUrl>https://github.com/MrRoundRobin/CI-Demo.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>CI; GutHub</PackageTags>
+    <PackageId>$(AssemblyName)</PackageId>
+    <PackageProjectUrl>https://github.com/MrRoundRobin/CI-Demo</PackageProjectUrl>
+    <Version>0.0.0-alpah.1</Version>
+  </PropertyGroup>
+
+</Project>

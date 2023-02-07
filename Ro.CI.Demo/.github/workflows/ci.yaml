@@ -1,0 +1,64 @@
+name: Build, Test & Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - edited
+      - reopened
+  schedule:
+    - cron: 18 3 * * 4 # Every Thursday
+  workflow_dispatch:
+
+jobs:
+  build_analyze_publish:
+    name: Build, Test & Release
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set VERSION variable from tag
+      if: github.ref_type == tag
+      run: echo "VERSION=${github.ref_name}" >> $GITHUB_ENV
+
+    - name: Set VERSION variable from tag
+      if: github.ref_type != tag
+      run: echo "VERSION=0.0.1-ci.0" >> $GITHUB_ENV
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: csharp
+        queries: security-extended,security-and-quality
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --configuration Release /p:Version=${VERSION} --no-restore
+    - name: Create package
+      run: dotnet pack --configuration Release /p:Version=${VERSION}
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{matrix.language}}"
+
+    - name: Create Release
+      if: github.ref_type == tag
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: "*.snupkg,*.nupkg"
+
+    - name: Upload
+      if: github.ref_type == tag
+      run: >-
+        dotnet nuget add source --username USERNAME --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${github.repository_owner}/index.json"
+        dotnet nuget push . --api-key ${GITHUB_TOKEN} --source "github"
