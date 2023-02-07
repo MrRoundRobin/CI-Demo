@@ -42,7 +42,7 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --configuration Release /p:Version=${VERSION} --no-restore
+      run: dotnet build --configuration Release --no-restore
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
@@ -61,11 +61,19 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Set STAGE variable for PR
+      if: github.event_name == 'pull_request'
+      run: echo "STAGE=Debug" >> $GITHUB_ENV
+
+    - name: Set STAGE variable for push
+      if: github.event_name != 'pull_request'
+      run: echo "STAGE=Release" >> $GITHUB_ENV
+
     - name: Set VERSION variable from tag
       if: github.ref_type == 'tag'
       run: echo "VERSION=${github.ref_name}" >> $GITHUB_ENV
 
-    - name: Set VERSION variable from tag
+    - name: Set VERSION variable when no tag
       if: github.ref_type != 'tag'
       run: echo "VERSION=0.0.1-ci.0" >> $GITHUB_ENV
 
@@ -78,27 +86,27 @@ jobs:
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --configuration Release /p:Version=${VERSION} --no-restore
+      run: dotnet build --configuration ${STAGE} /p:Version=${VERSION} --no-restore
 
     # - name: Test
     #   run: dotnet test --no-build --verbosity normal
 
     - name: Create package
-      run: dotnet pack --configuration Release /p:Version=${VERSION}
+      run: dotnet pack --configuration ${STAGE} /p:Version=${VERSION}
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3
       with:
         name: Package
         path: |
-          **/bin/**/*.nupkg
-          **/bin/**/*.snupkg
+          Ro.CI.Demo/bin/${STAGE}/*.nupkg
+          Ro.CI.Demo/bin/${STAGE}/*.snupkg
 
     - name: Create Release
       if: github.ref_type == 'tag'
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "*.snupkg,*.nupkg"
+        artifacts: "Ro.CI.Demo/bin/${STAGE}/*.nupkg,Ro.CI.Demo/bin/${STAGE}/*.snupkg"
 
     - name: Upload
       if: github.ref_type == 'tag'
