@@ -19,6 +19,12 @@ jobs:
   build_analyze_publish:
     name: Build, Test & Release
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      packages: write
+
     steps:
     - uses: actions/checkout@v3
 
