@@ -99,17 +99,17 @@ jobs:
       with:
         name: Package
         path: |
-          Ro.CI.Demo/bin/${STAGE}/*.nupkg
-          Ro.CI.Demo/bin/${STAGE}/*.snupkg
+          Ro.CI.Demo/bin/${{ env.STAGE }}/*.nupkg
+          Ro.CI.Demo/bin/${{ env.STAGE }}/*.snupkg
 
     - name: Create Release
       if: github.ref_type == 'tag'
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "Ro.CI.Demo/bin/${STAGE}/*.nupkg,Ro.CI.Demo/bin/${STAGE}/*.snupkg"
+        artifacts: "Ro.CI.Demo/bin/${{ env.STAGE }}/*.nupkg,Ro.CI.Demo/bin/${{ env.STAGE }}/*.snupkg"
 
     - name: Upload
       if: github.ref_type == 'tag'
       run: >-
         dotnet nuget add source --username USERNAME --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${github.repository_owner}/index.json"
-        dotnet nuget push . --api-key ${GITHUB_TOKEN} --source "github"
+        dotnet nuget push . --api-key ${{ secrets.GITHUB_TOKEN }} --source "github"
